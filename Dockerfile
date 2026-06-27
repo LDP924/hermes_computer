@@ -1,4 +1,4 @@
-# ─────────────────────────────────────────────────────────────
+﻿# ─────────────────────────────────────────────────────────────
 #  hermes-computer — Xfce4 + VNC + Hermes (LDP自构建版)
 #  Base: nikolaik/python-nodejs (python3.13 + nodejs26)
 #  所有组件均使用最新版，不锁定版本
@@ -98,23 +98,8 @@ x-scheme-handler/http=google-chrome.desktop
 x-scheme-handler/https=google-chrome.desktop
 EOF
 
-# 创建自定义 chrome.desktop（加 --no-sandbox 确保容器内能启动）
-RUN cat > /root/.local/share/applications/google-chrome.desktop << 'EOF'
-[Desktop Entry]
-Version=1.0
-Name=Google Chrome
-GenericName=Web Browser
-Comment=Access the Internet
-Exec=/usr/bin/google-chrome-stable --no-sandbox --disable-dev-shm-usage --disable-gpu %U
-StartupNotify=true
-Terminal=false
-Icon=google-chrome
-Type=Application
-Categories=Network;WebBrowser;
-MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
-EOF
-
-# 创建 chrome wrapper 确保任何调用方式都能正常启动
+# 创建 chrome wrapper：所有调用路径统一走此脚本，自动带上容器必需参数
+# --test-type 抑制 root 下"不受支持的命令行标记"警告
 RUN cat > /usr/local/bin/chrome << 'EOF'
 #!/bin/bash
 exec /usr/bin/google-chrome-stable \
@@ -122,14 +107,22 @@ exec /usr/bin/google-chrome-stable \
     --disable-dev-shm-usage \
     --disable-gpu \
     --disable-software-rasterizer \
+    --test-type \
     "$@"
 EOF
-RUN chmod +x /usr/local/bin/chrome && \
-    ln -sf /usr/local/bin/chrome /usr/local/bin/chromium && \
-    ln -sf /usr/local/bin/chrome /usr/local/bin/x-www-browser && \
-    ln -sf /usr/local/bin/chrome /usr/local/bin/xdg-open-browser && \
-    update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/local/bin/chrome 200 && \
-    update-alternatives --set x-www-browser /usr/local/bin/chrome
+RUN chmod +x /usr/local/bin/chrome \
+    && ln -sf /usr/local/bin/chrome /usr/local/bin/chromium \
+    && ln -sf /usr/local/bin/chrome /usr/local/bin/x-www-browser \
+    && ln -sf /usr/local/bin/chrome /usr/local/bin/xdg-open-browser \
+    && update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/local/bin/chrome 200 \
+    && update-alternatives --set x-www-browser /usr/local/bin/chrome
+
+# 同时覆盖系统级和用户级 chrome.desktop，Exec 全部指向 wrapper
+# 系统级（/usr/share/applications/）才是任务栏/应用菜单真正读取的
+RUN mkdir -p /root/.local/share/applications \
+    && printf '[Desktop Entry]\nVersion=1.0\nName=Google Chrome\nGenericName=Web Browser\nComment=Access the Internet\nExec=/usr/local/bin/chrome %%U\nStartupNotify=true\nTerminal=false\nIcon=google-chrome\nType=Application\nCategories=Network;WebBrowser;\nMimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;\n' \
+       | tee /usr/share/applications/google-chrome.desktop \
+           /root/.local/share/applications/google-chrome.desktop > /dev/null
 
 # noVNC viewport patch：给vnc.html加上移动端viewport（解决手机只显示一半）
 RUN NOVNC_HTML="/usr/share/novnc/vnc.html" && \

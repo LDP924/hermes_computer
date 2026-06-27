@@ -8,7 +8,7 @@ start_services() {
     export DISPLAY=":1"
     export PATH="/root/.local/bin:/usr/local/node/bin:/root/.hermes/hermes-agent/venv/bin:$PATH"
 
-    VNC_GEOMETRY="${VNC_GEOMETRY:-1600x900}"  # 手机推荐: 1280x720, 电脑推荐: 1920x1080
+    VNC_GEOMETRY="${VNC_GEOMETRY:-1920x1080}"
     VNC_DEPTH="${VNC_DEPTH:-24}"
     VNC_PORT=5901
     NOVNC_PORT=7860
@@ -17,7 +17,8 @@ start_services() {
     # ── VNC 密码配置 ──────────────────────────────────────────
     if [ -n "${VNC_PASSWD}" ]; then
         mkdir -p "${HOME}/.vnc"
-        echo "${VNC_PASSWD}" | vncpasswd -f > "${HOME}/.vnc/passwd"
+        # -f: 从 stdin 读明文密码，输出混淆后的内容到 stdout（非交互模式）
+        echo "${VNC_PASSWD}" | /usr/bin/vncpasswd -f > "${HOME}/.vnc/passwd"
         chmod 600 "${HOME}/.vnc/passwd"
         VNC_SECURITY_ARGS="-SecurityTypes VncAuth"
         VNC_AUTH_ARGS="-rfbauth ${HOME}/.vnc/passwd"
