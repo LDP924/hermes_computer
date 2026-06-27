@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────
-#  openclaw_computer — Xfce4 + VNC + Hermes (LDP自构建版)
+#  hermes_computer — Xfce4 + VNC + Hermes (LDP自构建版)
 #  Base: nikolaik/python-nodejs (python3.13 + nodejs26)
 #  所有组件均使用最新版，不锁定版本
 # ─────────────────────────────────────────────────────────────
