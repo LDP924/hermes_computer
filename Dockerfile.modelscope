@@ -1,4 +1,4 @@
-FROM ghcr.io/你的GitHub用户名/hermes_computer:latest
+FROM ghcr.io/ldp924/hermes-computer:latest
 
 EXPOSE 7860
 
