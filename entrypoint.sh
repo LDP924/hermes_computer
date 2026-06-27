@@ -8,7 +8,7 @@ start_services() {
     export DISPLAY=":1"
     export PATH="/root/.local/bin:/usr/local/node/bin:/root/.hermes/hermes-agent/venv/bin:$PATH"
 
-    VNC_GEOMETRY="${VNC_GEOMETRY:-1920x1080}"
+    VNC_GEOMETRY="${VNC_GEOMETRY:-1600x900}"  # 手机推荐: 1280x720, 电脑推荐: 1920x1080
     VNC_DEPTH="${VNC_DEPTH:-24}"
     VNC_PORT=5901
     NOVNC_PORT=7860
@@ -84,7 +84,7 @@ start_services() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta http-equiv="refresh" content="0; url=vnc.html?autoconnect=true&reconnect=true&reconnect_delay=2000&resize=scale&view_only=false&quality=6&compression=2">
+<meta http-equiv="refresh" content="0; url=vnc.html?autoconnect=true&reconnect=true&reconnect_delay=2000&resize=remote&view_only=false&quality=6&compression=2&show_dot=false">
 <title>正在连接桌面...</title>
 <style>
   body{background:#1a1a2e;color:#cdd6f4;font-family:sans-serif;

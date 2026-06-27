@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────
-#  hermes_computer — Xfce4 + VNC + Hermes (LDP自构建版)
+#  hermes-computer — Xfce4 + VNC + Hermes (LDP自构建版)
 #  Base: nikolaik/python-nodejs (python3.13 + nodejs26)
 #  所有组件均使用最新版，不锁定版本
 # ─────────────────────────────────────────────────────────────
@@ -81,10 +81,9 @@ RUN mkdir -p /etc/opt/chrome/policies/managed && \
 }
 EOF
 
-# 设置 Chrome 为 Xfce4 默认浏览器（修复任务栏点浏览器报错）
-RUN mkdir -p /root/.config && \
-    # xdg-mime 默认浏览器
-    mkdir -p /root/.local/share/applications && \
+# 设置 Chrome 为 Xfce4 默认浏览器 + 修复无法从任务栏/应用程序启动的问题
+RUN mkdir -p /root/.local/share/applications /root/.config && \
+    # mimeapps.list 设置默认浏览器
     cat > /root/.local/share/applications/mimeapps.list << 'EOF'
 [Default Applications]
 text/html=google-chrome.desktop
@@ -98,6 +97,39 @@ text/html=google-chrome.desktop
 x-scheme-handler/http=google-chrome.desktop
 x-scheme-handler/https=google-chrome.desktop
 EOF
+
+# 创建自定义 chrome.desktop（加 --no-sandbox 确保容器内能启动）
+RUN cat > /root/.local/share/applications/google-chrome.desktop << 'EOF'
+[Desktop Entry]
+Version=1.0
+Name=Google Chrome
+GenericName=Web Browser
+Comment=Access the Internet
+Exec=/usr/bin/google-chrome-stable --no-sandbox --disable-dev-shm-usage --disable-gpu %U
+StartupNotify=true
+Terminal=false
+Icon=google-chrome
+Type=Application
+Categories=Network;WebBrowser;
+MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+EOF
+
+# 创建 chrome wrapper 确保任何调用方式都能正常启动
+RUN cat > /usr/local/bin/chrome << 'EOF'
+#!/bin/bash
+exec /usr/bin/google-chrome-stable \
+    --no-sandbox \
+    --disable-dev-shm-usage \
+    --disable-gpu \
+    --disable-software-rasterizer \
+    "$@"
+EOF
+RUN chmod +x /usr/local/bin/chrome && \
+    ln -sf /usr/local/bin/chrome /usr/local/bin/chromium && \
+    ln -sf /usr/local/bin/chrome /usr/local/bin/x-www-browser && \
+    ln -sf /usr/local/bin/chrome /usr/local/bin/xdg-open-browser && \
+    update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/local/bin/chrome 200 && \
+    update-alternatives --set x-www-browser /usr/local/bin/chrome
 
 # noVNC viewport patch：给vnc.html加上移动端viewport（解决手机只显示一半）
 RUN NOVNC_HTML="/usr/share/novnc/vnc.html" && \
